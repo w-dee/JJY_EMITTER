@@ -334,7 +334,7 @@ void setup()
 		Serial.printf(".");
 		delay(1000);
 	}
-	configTzTime(tz, ntp[0], NULL, NULL);
+	configTzTime(tz, ntp[0], ntp[1], ntp[2]);
 
 	ledcSetup(LEDC_60k_CHANNEL, 60000.0, 8);
 	ledcAttachPin(JJY_60k_OUTPUT_PIN, LEDC_60k_CHANNEL);
