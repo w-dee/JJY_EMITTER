@@ -368,7 +368,7 @@ void loop()
 
 	if (last_min != tm->tm_min)
 	{
-		// 分の変わり目。1秒分のタイムコードを作成する。
+		// 分の変わり目。1分ぶんのタイムコードを作成する。
 
 		Serial.printf("%d%d/%d/%d (%d%d%d) %d%d:%d%d\r\n",
 					  gen.year10,
