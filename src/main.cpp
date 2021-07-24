@@ -21,6 +21,7 @@ const char* ntp[] = {"0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org"}; // N
 
 #define LEDC_40k_CHANNEL 0	// LEDCの40kHz用チャネル
 #define LEDC_60k_CHANNEL 10 // LEDCの60kHz用チャネル
+#define LEDC_RESOLUTION_BITS 1 // LEDCの解像度
 
 // タイムコードを作成するクラス
 class jjy_timecode_generator_t
@@ -336,9 +337,9 @@ void setup()
 	}
 	configTzTime(tz, ntp[0], ntp[1], ntp[2]);
 
-	ledcSetup(LEDC_60k_CHANNEL, 60000.0, 8);
+	ledcSetup(LEDC_60k_CHANNEL, 60000.0, LEDC_RESOLUTION_BITS);
 	ledcAttachPin(JJY_60k_OUTPUT_PIN, LEDC_60k_CHANNEL);
-	ledcSetup(LEDC_40k_CHANNEL, 40000.0, 8);
+	ledcSetup(LEDC_40k_CHANNEL, 40000.0, LEDC_RESOLUTION_BITS);
 	ledcAttachPin(JJY_40k_OUTPUT_PIN, LEDC_40k_CHANNEL);
 	if (JJY_LED_OUTPUT_PIN != -1)
 		pinMode(JJY_LED_OUTPUT_PIN, OUTPUT);
@@ -352,23 +353,24 @@ void loop()
 	time_t t;
 	t = time(&t);
 	struct tm *tm = localtime(&t);
-	gen.year10 = (tm->tm_year / 10) % 10;
-	gen.year1 = tm->tm_year % 10;
-	gen.yday100 = ((tm->tm_yday + 1) / 100) % 10;
-	gen.yday10 = ((tm->tm_yday + 1) / 10) % 10;
-	gen.yday1 = (tm->tm_yday + 1) % 10;
-	gen.yday = (tm->tm_yday + 1);
-	gen.hour10 = (tm->tm_hour / 10) % 10;
-	gen.hour1 = tm->tm_hour % 10;
-	gen.min10 = (tm->tm_min / 10) % 10;
-	gen.min1 = tm->tm_min % 10;
-	gen.wday = tm->tm_wday;
-	gen.mon = tm->tm_mon;
-	gen.day = tm->tm_mday;
-
 	if (last_min != tm->tm_min)
 	{
 		// 分の変わり目。1分ぶんのタイムコードを作成する。
+		gen.year10 = (tm->tm_year / 10) % 10;
+		gen.year1 = tm->tm_year % 10;
+		gen.yday100 = ((tm->tm_yday + 1) / 100) % 10;
+		gen.yday10 = ((tm->tm_yday + 1) / 10) % 10;
+		gen.yday1 = (tm->tm_yday + 1) % 10;
+		gen.yday = (tm->tm_yday + 1);
+		gen.hour10 = (tm->tm_hour / 10) % 10;
+		gen.hour1 = tm->tm_hour % 10;
+		gen.min10 = (tm->tm_min / 10) % 10;
+		gen.min1 = tm->tm_min % 10;
+		gen.wday = tm->tm_wday;
+		gen.mon = tm->tm_mon;
+		gen.day = tm->tm_mday;
+		gen.generate();
+		min_origin_tick = millis();
 
 		Serial.printf("%d%d/%d/%d (%d%d%d) %d%d:%d%d\r\n",
 					  gen.year10,
@@ -383,8 +385,6 @@ void loop()
 					  gen.min10,
 					  gen.min1);
 
-		gen.generate();
-		min_origin_tick = millis();
 	}
 	last_min = tm->tm_min;
 
@@ -417,8 +417,8 @@ void loop()
 			last_on_state = on;
 			if (on)
 			{
-				ledcWrite(LEDC_60k_CHANNEL, 128); // ディユーティー比 128 = 50%
-				ledcWrite(LEDC_40k_CHANNEL, 128); // ディユーティー比 128 = 50%
+				ledcWrite(LEDC_60k_CHANNEL, (1<<LEDC_RESOLUTION_BITS)/2); // ディユーティー比 = 50%
+				ledcWrite(LEDC_40k_CHANNEL, (1<<LEDC_RESOLUTION_BITS)/2); // ディユーティー比 = 50%
 				if (JJY_LED_OUTPUT_PIN != -1)
 					digitalWrite(JJY_LED_OUTPUT_PIN, 1);
 			}
