@@ -17,8 +17,8 @@ const char* ntp[] = {"0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org"}; // N
 
 #define JJY_40k_OUTPUT_PIN 23 // 40kHzコードを出力するピン(-1 = 使わない場合)
 #define JJY_60k_OUTPUT_PIN 22 // 60kHzコードを出力するピン(-1 = 使わない場合)
-#define JJY_CODE_OUTPUT_PIN 2  // 変調前のタイムコードを出力するピン(-1 = 使わない場合)
-#define JJY_CODE_INVERT 1 // JJY_CODE_OUTPUT_PINに負論理で出力する場合に1 そうでない場合は0
+#define JJY_CODE_NONINVERTED_OUTPUT_PIN 2  // 変調前のタイムコードを正論理で出力するピン(-1 = 使わない場合)
+#define JJY_CODE_INVERTED_OUTPUT_PIN 15 // JJY_CODE_OUTPUT_PINに負論理で出力するピン(-1 = 使わない場合)
 
 #define LEDC_40k_CHANNEL 0	   // LEDCの40kHz用チャネル
 #define LEDC_60k_CHANNEL 10	   // LEDCの60kHz用チャネル
@@ -41,6 +41,7 @@ public:
 	unsigned char wday;
 	unsigned char mon;
 	unsigned char day;
+	bool valid = false;
 
 	unsigned char result[61];
 
@@ -315,6 +316,7 @@ public:
 			result[sec] = cc;
 		}
 		result[60] = 2;
+		valid = true;
 	}
 } gen;
 
@@ -350,8 +352,11 @@ void setup()
 		ledcAttachPin(JJY_40k_OUTPUT_PIN, LEDC_40k_CHANNEL);
 	}
 
-	if (JJY_CODE_OUTPUT_PIN != -1)
-		pinMode(JJY_CODE_OUTPUT_PIN, OUTPUT);
+	if (JJY_CODE_NONINVERTED_OUTPUT_PIN != -1)
+		pinMode(JJY_CODE_NONINVERTED_OUTPUT_PIN, OUTPUT);
+
+	if (JJY_CODE_INVERTED_OUTPUT_PIN != -1)
+		pinMode(JJY_CODE_INVERTED_OUTPUT_PIN, OUTPUT);
 }
 
 void loop()
@@ -362,7 +367,9 @@ void loop()
 	time_t t;
 	t = time(&t);
 	struct tm *tm = localtime(&t);
-	if (last_min != tm->tm_min)
+	bool date_valid = true;
+	if(tm->tm_year + 1900 < 2000) date_valid = false; // おそらくまだ NTPの取得ができていない
+	if (last_min != tm->tm_min && tm->tm_sec == 0)
 	{
 		// 分の変わり目。1分ぶんのタイムコードを作成する。
 		gen.year10 = (tm->tm_year / 10) % 10;
@@ -423,23 +430,31 @@ void loop()
 		if (on != last_on_state)
 		{
 			last_on_state = on;
-			if (on)
+			if(date_valid && gen.valid)
 			{
-				if (JJY_60k_OUTPUT_PIN != -1)
-					ledcWrite(LEDC_60k_CHANNEL, (1 << LEDC_RESOLUTION_BITS) / 2); // ディユーティー比 = 50%
-				if (JJY_40k_OUTPUT_PIN != -1)
-					ledcWrite(LEDC_40k_CHANNEL, (1 << LEDC_RESOLUTION_BITS) / 2); // ディユーティー比 = 50%
-				if (JJY_CODE_OUTPUT_PIN != -1)
-					digitalWrite(JJY_CODE_OUTPUT_PIN, 1^JJY_CODE_INVERT);
-			}
-			else
-			{
-				if (JJY_60k_OUTPUT_PIN != -1)
-					ledcWrite(LEDC_60k_CHANNEL, 0); // ディユーティー比 0 = OFF
-				if (JJY_40k_OUTPUT_PIN != -1)
-					ledcWrite(LEDC_40k_CHANNEL, 0); // ディユーティー比 0 = OFF
-				if (JJY_CODE_OUTPUT_PIN != -1)
-					digitalWrite(JJY_CODE_OUTPUT_PIN, 0^JJY_CODE_INVERT);
+				// 正常に時刻を取得できている場合のみに出力を行う
+				if (on)
+				{
+					if (JJY_60k_OUTPUT_PIN != -1)
+						ledcWrite(LEDC_60k_CHANNEL, (1 << LEDC_RESOLUTION_BITS) / 2); // ディユーティー比 = 50%
+					if (JJY_40k_OUTPUT_PIN != -1)
+						ledcWrite(LEDC_40k_CHANNEL, (1 << LEDC_RESOLUTION_BITS) / 2); // ディユーティー比 = 50%
+					if (JJY_CODE_NONINVERTED_OUTPUT_PIN != -1)
+						digitalWrite(JJY_CODE_NONINVERTED_OUTPUT_PIN, 1);
+					if (JJY_CODE_INVERTED_OUTPUT_PIN != -1)
+						digitalWrite(JJY_CODE_INVERTED_OUTPUT_PIN, 0);
+				}
+				else
+				{
+					if (JJY_60k_OUTPUT_PIN != -1)
+						ledcWrite(LEDC_60k_CHANNEL, 0); // ディユーティー比 0 = OFF
+					if (JJY_40k_OUTPUT_PIN != -1)
+						ledcWrite(LEDC_40k_CHANNEL, 0); // ディユーティー比 0 = OFF
+					if (JJY_CODE_NONINVERTED_OUTPUT_PIN != -1)
+						digitalWrite(JJY_CODE_NONINVERTED_OUTPUT_PIN, 0);
+					if (JJY_CODE_INVERTED_OUTPUT_PIN != -1)
+						digitalWrite(JJY_CODE_INVERTED_OUTPUT_PIN, 1);
+				}
 			}
 		}
 	}
