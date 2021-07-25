@@ -17,7 +17,8 @@ const char* ntp[] = {"0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org"}; // N
 
 #define JJY_40k_OUTPUT_PIN 23 // 40kHzコードを出力するピン(-1 = 使わない場合)
 #define JJY_60k_OUTPUT_PIN 22 // 60kHzコードを出力するピン(-1 = 使わない場合)
-#define JJY_LED_OUTPUT_PIN 2  // タイムコードを出力するLEDピン(-1 = 使わない場合)
+#define JJY_CODE_OUTPUT_PIN 2  // 変調前のタイムコードを出力するピン(-1 = 使わない場合)
+#define JJY_CODE_INVERT 1 // JJY_CODE_OUTPUT_PINに負論理で出力する場合に1 そうでない場合は0
 
 #define LEDC_40k_CHANNEL 0	   // LEDCの40kHz用チャネル
 #define LEDC_60k_CHANNEL 10	   // LEDCの60kHz用チャネル
@@ -349,8 +350,8 @@ void setup()
 		ledcAttachPin(JJY_40k_OUTPUT_PIN, LEDC_40k_CHANNEL);
 	}
 
-	if (JJY_LED_OUTPUT_PIN != -1)
-		pinMode(JJY_LED_OUTPUT_PIN, OUTPUT);
+	if (JJY_CODE_OUTPUT_PIN != -1)
+		pinMode(JJY_CODE_OUTPUT_PIN, OUTPUT);
 }
 
 void loop()
@@ -428,8 +429,8 @@ void loop()
 					ledcWrite(LEDC_60k_CHANNEL, (1 << LEDC_RESOLUTION_BITS) / 2); // ディユーティー比 = 50%
 				if (JJY_40k_OUTPUT_PIN != -1)
 					ledcWrite(LEDC_40k_CHANNEL, (1 << LEDC_RESOLUTION_BITS) / 2); // ディユーティー比 = 50%
-				if (JJY_LED_OUTPUT_PIN != -1)
-					digitalWrite(JJY_LED_OUTPUT_PIN, 1);
+				if (JJY_CODE_OUTPUT_PIN != -1)
+					digitalWrite(JJY_CODE_OUTPUT_PIN, 1^JJY_CODE_INVERT);
 			}
 			else
 			{
@@ -437,8 +438,8 @@ void loop()
 					ledcWrite(LEDC_60k_CHANNEL, 0); // ディユーティー比 0 = OFF
 				if (JJY_40k_OUTPUT_PIN != -1)
 					ledcWrite(LEDC_40k_CHANNEL, 0); // ディユーティー比 0 = OFF
-				if (JJY_LED_OUTPUT_PIN != -1)
-					digitalWrite(JJY_LED_OUTPUT_PIN, 0);
+				if (JJY_CODE_OUTPUT_PIN != -1)
+					digitalWrite(JJY_CODE_OUTPUT_PIN, 0^JJY_CODE_INVERT);
 			}
 		}
 	}
