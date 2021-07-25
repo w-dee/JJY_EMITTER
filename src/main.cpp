@@ -15,12 +15,12 @@ const char* ntp[] = {"0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org"}; // N
 
 */
 
-#define JJY_40k_OUTPUT_PIN 23 // 40kHzコードを出力するピン
-#define JJY_60k_OUTPUT_PIN 22 // 60kHzコードを出力するピン
+#define JJY_40k_OUTPUT_PIN 23 // 40kHzコードを出力するピン(-1 = 使わない場合)
+#define JJY_60k_OUTPUT_PIN 22 // 60kHzコードを出力するピン(-1 = 使わない場合)
 #define JJY_LED_OUTPUT_PIN 2  // タイムコードを出力するLEDピン(-1 = 使わない場合)
 
-#define LEDC_40k_CHANNEL 0	// LEDCの40kHz用チャネル
-#define LEDC_60k_CHANNEL 10 // LEDCの60kHz用チャネル
+#define LEDC_40k_CHANNEL 0	   // LEDCの40kHz用チャネル
+#define LEDC_60k_CHANNEL 10	   // LEDCの60kHz用チャネル
 #define LEDC_RESOLUTION_BITS 1 // LEDCの解像度
 
 // タイムコードを作成するクラス
@@ -337,10 +337,18 @@ void setup()
 	}
 	configTzTime(tz, ntp[0], ntp[1], ntp[2]);
 
-	ledcSetup(LEDC_60k_CHANNEL, 60000.0, LEDC_RESOLUTION_BITS);
-	ledcAttachPin(JJY_60k_OUTPUT_PIN, LEDC_60k_CHANNEL);
-	ledcSetup(LEDC_40k_CHANNEL, 40000.0, LEDC_RESOLUTION_BITS);
-	ledcAttachPin(JJY_40k_OUTPUT_PIN, LEDC_40k_CHANNEL);
+	if (JJY_60k_OUTPUT_PIN != -1)
+	{
+		ledcSetup(LEDC_60k_CHANNEL, 60000.0, LEDC_RESOLUTION_BITS);
+		ledcAttachPin(JJY_60k_OUTPUT_PIN, LEDC_60k_CHANNEL);
+	}
+
+	if (JJY_40k_OUTPUT_PIN != -1)
+	{
+		ledcSetup(LEDC_40k_CHANNEL, 40000.0, LEDC_RESOLUTION_BITS);
+		ledcAttachPin(JJY_40k_OUTPUT_PIN, LEDC_40k_CHANNEL);
+	}
+
 	if (JJY_LED_OUTPUT_PIN != -1)
 		pinMode(JJY_LED_OUTPUT_PIN, OUTPUT);
 }
@@ -384,7 +392,6 @@ void loop()
 					  gen.hour1,
 					  gen.min10,
 					  gen.min1);
-
 	}
 	last_min = tm->tm_min;
 
@@ -417,15 +424,19 @@ void loop()
 			last_on_state = on;
 			if (on)
 			{
-				ledcWrite(LEDC_60k_CHANNEL, (1<<LEDC_RESOLUTION_BITS)/2); // ディユーティー比 = 50%
-				ledcWrite(LEDC_40k_CHANNEL, (1<<LEDC_RESOLUTION_BITS)/2); // ディユーティー比 = 50%
+				if (JJY_60k_OUTPUT_PIN != -1)
+					ledcWrite(LEDC_60k_CHANNEL, (1 << LEDC_RESOLUTION_BITS) / 2); // ディユーティー比 = 50%
+				if (JJY_40k_OUTPUT_PIN != -1)
+					ledcWrite(LEDC_40k_CHANNEL, (1 << LEDC_RESOLUTION_BITS) / 2); // ディユーティー比 = 50%
 				if (JJY_LED_OUTPUT_PIN != -1)
 					digitalWrite(JJY_LED_OUTPUT_PIN, 1);
 			}
 			else
 			{
-				ledcWrite(LEDC_60k_CHANNEL, 0); // ディユーティー比 0 = OFF
-				ledcWrite(LEDC_40k_CHANNEL, 0); // ディユーティー比 0 = OFF
+				if (JJY_60k_OUTPUT_PIN != -1)
+					ledcWrite(LEDC_60k_CHANNEL, 0); // ディユーティー比 0 = OFF
+				if (JJY_40k_OUTPUT_PIN != -1)
+					ledcWrite(LEDC_40k_CHANNEL, 0); // ディユーティー比 0 = OFF
 				if (JJY_LED_OUTPUT_PIN != -1)
 					digitalWrite(JJY_LED_OUTPUT_PIN, 0);
 			}
