@@ -17,8 +17,8 @@ const char* ntp[] = {"0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org"}; // N
 
 #define JJY_40k_OUTPUT_PIN 23 // 40kHzコードを出力するピン(-1 = 使わない場合)
 #define JJY_60k_OUTPUT_PIN 22 // 60kHzコードを出力するピン(-1 = 使わない場合)
-#define JJY_CODE_NONINVERTED_OUTPUT_PIN 2  // 変調前のタイムコードを正論理で出力するピン(-1 = 使わない場合)
-#define JJY_CODE_INVERTED_OUTPUT_PIN 15 // JJY_CODE_OUTPUT_PINに負論理で出力するピン(-1 = 使わない場合)
+#define JJY_CODE_NONINVERTED_OUTPUT_PIN 2  // 無変調のタイムコードを正論理で出力するピン(-1 = 使わない場合)
+#define JJY_CODE_INVERTED_OUTPUT_PIN 15 // 無変調のタイムコードを負論理で出力するピン(-1 = 使わない場合)
 
 #define LEDC_40k_CHANNEL 0	   // LEDCの40kHz用チャネル
 #define LEDC_60k_CHANNEL 10	   // LEDCの60kHz用チャネル
