@@ -320,15 +320,13 @@ public:
 	}
 } gen;
 
-void setup()
+static void start_wifi()
 {
 
-	setCpuFrequencyMhz(80); // 80MHzで十分
-
-	Serial.begin(115200);
-
-	WiFi.begin(ssid, password);
+	WiFi.mode(WIFI_OFF);
 	WiFi.setAutoReconnect(true);
+	WiFi.mode(WIFI_STA);
+	WiFi.begin(ssid, password);
 
 	Serial.println();
 	Serial.println();
@@ -339,6 +337,14 @@ void setup()
 		delay(1000);
 	}
 	configTzTime(tz, ntp[0], ntp[1], ntp[2]);
+
+}
+
+void setup()
+{
+	Serial.begin(115200);
+
+	start_wifi();
 
 	if (JJY_60k_OUTPUT_PIN != -1)
 	{
